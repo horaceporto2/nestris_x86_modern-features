@@ -58,7 +58,7 @@ Windows:
 SDL has been packaged in the release for Windows.
 
 Binaries available under releases:
-https://github.com/rosskidson/nestris_x86/releases/tag/v0.7
+https://github.com/horaceporto2/nestris_x86_modern-features/releases/tag/v0.8.0
 
 ### Building
 
