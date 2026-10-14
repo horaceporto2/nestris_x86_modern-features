@@ -1,7 +1,7 @@
 # Nestris x86
 
 ### Summary
-This is a reimplementation of the original 1989 NES Tetris game using modern c++ compilers for modern computer hardware.  Nothing from the NES is being emulated here, this is a native implementation of the game for Windows / Linux / MacOs.  As a result there is no emulator lag.  However being a port, it is not identical, there are some aspects of the original game missing, whilst other features have been added.  It is the intent of this project to be as close as possible to the original NES game in terms of gameplay mechanics.
+This is a reimplementation of the original 1989 NES Tetris game using modern C++ compilers for modern computer hardware. Nothing from the NES is being emulated here: this is a native implementation for Windows, Linux, and macOS. Alongside the NES-style gameplay, the project includes an optional modern mode with Hold, Hard Drop, SRS rotation, a ghost piece, lock delay, and guideline-style scoring.
 
 ### Features
 - Very low input latency
@@ -10,6 +10,7 @@ This is a reimplementation of the original 1989 NES Tetris game using modern c++
 - NTSC and PAL modes
 - Identical rotation system
 - Same RNG piece distribution
+- Optional modern rules alongside the classic NES rules
 
 #### Additional features
 - Customizable DAS speeds
@@ -19,13 +20,17 @@ This is a reimplementation of the original 1989 NES Tetris game using modern c++
 - Hard drop (may be enabled/disabled)
 - Wall kick (may be enabled/disabled)
 - DAS charge visualization
+- Modern mode: Hold, SRS wall kicks, ghost piece, lock delay, modern gravity, and scoring
+- 7-bag randomizer for modern mode
+- Separate classic and modern high-score tables during the current session
+- 16:9 playfield layout with Hold displayed beside Next
+- Escape key returns to the previous menu screen
 
 #### Missing features
 - Type B
 - Rocket launch endings
 - Original music
-- High scores
-- Save keyboard/gamepad key bindings
+- Persistent high-score storage
 
 The features that are missing are not for any technical reason, the focus was simply placed on other features.  Feature requests or suggesstions are welcome. Simply make a issue on the project github page, or just email me directly: ross dot kidson at gmail dot com
 
@@ -87,6 +92,12 @@ make -j8
 SDL for windows has been included in this repository. After checking out the code open the directory in Visual Studio and configure using CMake.
 
 ### Description of Game Options
+
+##### Modern Mode
+Enables modern gameplay rules, including Hold (default keyboard key: `C`), SRS rotation and wall kicks, a ghost piece, lock delay, modern gravity, and guideline-style scoring. Modern mode uses the 7-bag randomizer and a 16:9 layout. Classic mode keeps the NES-style rules; the RNG can still be selected in the options.
+
+##### Back to menu
+Press `Escape` to return from gameplay to the level selector. Escape also backs out of the options and keyboard configuration screens. The Back action can be remapped in the keyboard configuration.
 
 ##### Configure Keyboard
 Change the keyboard bindings.  The new bindings will not be in use until after selecting 'accept'
