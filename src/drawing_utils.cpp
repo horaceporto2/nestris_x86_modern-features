@@ -8,6 +8,22 @@
 namespace nestris_x86 {
 using pdi = PixelDrawingInterface;
 
+void drawWidescreenRails(const PixelDrawingInterface& drawer) {
+  const auto frame = pdi::Color{40, 174, 166, 255};
+  const auto dim = pdi::Color{17, 64, 67, 255};
+  drawer.fillRect(0, 0, WIDESCREEN_WIDTH, WIDESCREEN_HEIGHT, pdi::BLACK());
+  drawer.fillRect(4, 4, 1, 217, frame);
+  drawer.fillRect(67, 4, 1, 217, dim);
+  drawer.fillRect(331, 4, 1, 217, dim);
+  drawer.fillRect(395, 4, 1, 217, frame);
+  drawer.fillRect(4, 4, 64, 1, dim);
+  drawer.fillRect(332, 4, 64, 1, dim);
+  drawer.fillRect(4, 220, 64, 1, dim);
+  drawer.fillRect(332, 220, 64, 1, dim);
+  drawer.drawString(10, 12, "NESTRIS", frame);
+  drawer.drawString(340, 12, "16:9", frame);
+}
+
 void drawNumber(const PixelDrawingInterface& drawer, const int x, const int y, const int num,
                 const int pad, const pdi::Color& color) {
   const auto clipped_num = std::min(num, static_cast<int>(std::pow(10, pad) - 1));

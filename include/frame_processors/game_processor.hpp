@@ -2,6 +2,8 @@
 
 #include <random>
 #include <stdexcept>
+#include <map>
+#include <string>
 
 #include "assets.hpp"
 #include "das.hpp"
@@ -13,7 +15,7 @@
 #include "sound.hpp"
 #include "statistics.hpp"
 #include "tetris_type.hpp"
-#include "tetromino_rng.hpp"
+#include "../tetromino_rng.hpp"
 
 namespace nestris_x86 {
 
@@ -27,6 +29,7 @@ struct GameOptions {
   bool show_das_bar{true};
   bool wall_kick{false};
   bool hard_drop{false};
+  bool modern_mode{false};  // Hold + hard drop + ghost + SRS + lock delay + guideline gravity/score
   StatisticsMode statistics_mode{};
   RngType rng_type{RngType::Nes};
 };
@@ -63,6 +66,8 @@ class GameProcessor : public FrameProcessorInterface {
   StatisticsMode statistics_mode_;
   LineClearAnimationInfo line_clear_info_;
   int top_out_frame_counter_;
+  std::map<int, std::string> high_scores_classic_{{1000, "HOWARD"}};
+  std::map<int, std::string> high_scores_modern_{{1000, "HOWARD"}};
 };
 
 }  // namespace nestris_x86

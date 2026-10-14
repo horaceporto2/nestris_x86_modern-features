@@ -22,12 +22,15 @@ enum class KeyAction {
   RotateClockwise,      // NES gamepad A.
   RotateAntiClockwise,  // NES gamepad B.
   Start,
+  Hold,  // Modern mode only.
+  Back,  // Return to the level menu (keyboard: Escape).
   COUNT
 };
 
 constexpr int key_action_size = static_cast<int>(KeyAction::COUNT);
 const std::array<std::string, key_action_size> action_names{
-    "Up", "Down", "Left", "Right", "Rotate CW  (A)", "Rotate CCW (B)", "Start"};
+    "Up", "Down", "Left", "Right", "Rotate CW  (A)", "Rotate CCW (B)", "Start", "Hold",
+    "Back (ESC)"};
 
 inline std::string keyActionToString(const KeyAction &key_action) {
   return action_names[static_cast<int>(key_action)];
@@ -55,6 +58,12 @@ inline KeyAction stringToKeyAction(const std::string &action) {
   if (action == "Start") {
     return KeyAction::Start;
   }
+  if (action == "Hold") {
+    return KeyAction::Hold;
+  }
+  if (action == "Back (ESC)") {
+    return KeyAction::Back;
+  }
   LOG_ERROR("No key action found for string `" << action << "`.");
   return KeyAction::COUNT;
 }
@@ -72,6 +81,8 @@ inline KeyBindings getDefaultKeyBindings(const InputInterface &key_input) {
   key_bindings[KeyAction::RotateClockwise] = key_input.lookupKeyCode("X");      // NES gamepad A
   key_bindings[KeyAction::RotateAntiClockwise] = key_input.lookupKeyCode("Z");  // NES gamepad B
   key_bindings[KeyAction::Start] = key_input.lookupKeyCode("ENTER");
+  key_bindings[KeyAction::Hold] = key_input.lookupKeyCode("C");
+  key_bindings[KeyAction::Back] = key_input.lookupKeyCode("ESCAPE");
   return key_bindings;
 }
 
@@ -85,6 +96,8 @@ inline KeyBindings getDefaultGamePadBindings(const InputInterface &key_input) {
   key_bindings[KeyAction::RotateAntiClockwise] =
       key_input.lookupKeyCode("FACE_D");  // NES gamepad B
   key_bindings[KeyAction::Start] = key_input.lookupKeyCode("START");
+  key_bindings[KeyAction::Hold] = key_input.lookupKeyCode("FACE_U");
+  key_bindings[KeyAction::Back] = key_input.getNullKey();
   return key_bindings;
 }
 //#endif

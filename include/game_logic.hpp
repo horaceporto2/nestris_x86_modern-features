@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 #include "das.hpp"
@@ -23,6 +25,16 @@ bool outOfBounds(const Container &container, int x, int y) {
 
 int getScoreForLineClear(const int lines_cleared, const int level);
 
+// ---- Modern mode ----
+int getModernScoreForLineClear(const int lines_cleared, const int level);
+int modernGravityFrames(const int level);
+bool rotateTetrominoSrs(const GameState<>::Grid &grid, const int rotation_offset,
+                        TetrominoState &tetromino, int *used_kick = nullptr);
+TSpin classifyTSpin(const GameState<> &state);
+void scoreModernLock(GameState<> &state, const int lines_cleared);
+TetrominoState getGhostTetromino(const GameState<>::Grid &grid, const TetrominoState &tetromino);
+void holdTetromino(GameState<> &state);
+
 GameState<>::Grid addTetrominoToGrid(const GameState<>::Grid &grid,
                                      const TetrominoState &tetromino);
 
@@ -40,7 +52,7 @@ void clearLine(const int row, GameState<> &state);
 
 std::vector<int> checkForLineClears(const GameState<> &state);
 
-void updateEntryDelayForLineClear(int &delay_counter);
+void updateEntryDelayForLineClear(int &delay_counter, const bool modern = false);
 
 void updateScoreAndLevel(const int line_clears, const sound::SoundPlayer &sound_player,
                          GameState<> &state);

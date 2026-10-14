@@ -64,10 +64,18 @@ olc::Sprite *GameRenderer::getBlockSprite(const int level, const int color) cons
 }
 
 void GameRenderer::renderText(const GameState<> &state, const Statistics &stats) const {
-  constexpr pdi::Coords lines_pos{152, 16};
-  constexpr pdi::Coords high_score_pos{192, 32};
-  constexpr pdi::Coords score_pos{192, 56};
-  constexpr pdi::Coords level_pos{208, 160};
+  constexpr pdi::Coords lines_pos{224, 16};
+  constexpr pdi::Coords high_score_pos{264, 32};
+  constexpr pdi::Coords score_pos{264, 56};
+  constexpr pdi::Coords level_pos{280, 160};
+  const auto hint_frame = pdi::Color{40, 174, 166, 255};
+  drawer_->fillRect(338, 78, 54, 24, pdi::BLACK());
+  drawer_->fillRect(338, 78, 54, 1, hint_frame);
+  drawer_->fillRect(338, 101, 54, 1, hint_frame);
+  drawer_->fillRect(338, 78, 1, 24, hint_frame);
+  drawer_->fillRect(391, 78, 1, 24, hint_frame);
+  drawer_->drawString(347, 81, "ESC", pdi::WHITE());
+  drawer_->drawString(342, 91, "MENU", hint_frame);
   drawNumber(*drawer_, lines_pos, state.lines, 3);
   drawNumber(*drawer_, high_score_pos, state.high_scores.rbegin()->first, 7);
   drawNumber(*drawer_, score_pos, state.score, 7);
@@ -77,7 +85,7 @@ void GameRenderer::renderText(const GameState<> &state, const Statistics &stats)
 void GameRenderer::renderNextTetromino(const Tetromino &next_tetromino, const int level) const {
   auto get_next_tetromino_plotting_coords =
       [](const Tetromino &next_tetromino) -> std::tuple<int, int> {
-    constexpr int start_x = 196;
+    constexpr int start_x = 268;
     constexpr int start_y = 104;
     if (next_tetromino == Tetromino::Square) {
       return {start_x + 4, start_y + 8};
@@ -89,11 +97,85 @@ void GameRenderer::renderNextTetromino(const Tetromino &next_tetromino, const in
   };
 
   // Clear existing tetromino.
-  drawer_->fillRect(191, 112, 33, 15, pdi::BLACK());
+  drawer_->fillRect(263, 112, 33, 15, pdi::BLACK());
 
   const auto tetromino = getTetrominoGrid(next_tetromino, 0);
   const auto [x, y] = get_next_tetromino_plotting_coords(next_tetromino);
   renderGrid(x, y, tetromino, level, 8, 8, getColor(next_tetromino));
+}
+
+// Ghost piece: gray 8x8 outlines where the piece would land (modern mode).
+void GameRenderer::renderGhost(const GameState<> &state, const GameState<>::Grid &rendered_grid,
+                               const pdi::Coords &grid_top_left) const {
+  const auto ghost = getGhostTetromino(state.grid, state.active_tetromino);
+  const auto &tetromino_grid = getTetrominoGrid(ghost);
+  const auto [x_offset, y_offset] = getStartOffsets(ghost.tetromino);
+  const int x_start = ghost.x - x_offset;
+  const int y_start = ghost.y - y_offset;
+  const pdi::Color ghost_color{140, 140, 140, 255};
+  for (int i = 0; i < tetromino_grid.size(); ++i) {
+    for (int j = 0; j < tetromino_grid[i].size(); ++j) {
+      const int gx = x_start + i;
+      const int gy = y_start + j;
+      if (not tetromino_grid[i][j] || outOfBounds(rendered_grid, gx, gy) ||
+          rendered_grid[gx][gy]) {
+        continue;  // never draw over real blocks / the active piece
+      }
+      const int px = grid_top_left.x + gx * 8;
+      const int py = grid_top_left.y + gy * 8;
+      drawer_->fillRect(px, py, 8, 1, ghost_color);
+      drawer_->fillRect(px, py + 7, 8, 1, ghost_color);
+      drawer_->fillRect(px, py, 1, 8, ghost_color);
+      drawer_->fillRect(px + 7, py, 1, 8, ghost_color);
+    }
+  }
+}
+
+// Hold box (modern mode). Coordinates are a first guess for the left panel: adjust to your art.
+void GameRenderer::renderHold(const GameState<> &state) const {
+  // The NES statistics panel starts at y=61, so the hold box must end above it (y < 56).
+  constexpr int label_x = 17;
+  constexpr int label_y = 94;
+  constexpr int start_x = 23;
+  constexpr int start_y = 108;
+  constexpr int box_x = 8;
+  constexpr int box_y = 90;
+  constexpr int box_width = 56;
+  constexpr int box_height = 50;
+  const auto frame = pdi::Color{40, 174, 166, 255};
+  drawer_->fillRect(box_x, box_y, box_width, box_height, pdi::BLACK());
+  drawer_->fillRect(box_x, box_y, box_width, 1, frame);
+  drawer_->fillRect(box_x, box_y + box_height - 1, box_width, 1, frame);
+  drawer_->fillRect(box_x, box_y, 1, box_height, frame);
+  drawer_->fillRect(box_x + box_width - 1, box_y, 1, box_height, frame);
+  drawer_->drawString(pdi::Coords{label_x, label_y}, "HOLD",
+                      state.hold_used ? pdi::Color{120, 120, 120, 255} : pdi::WHITE());
+  if (not state.hold_tetromino.has_value()) {
+    return;
+  }
+  const Tetromino held = *state.hold_tetromino;
+  int x = start_x;
+  int y = start_y;
+  if (held == Tetromino::Square) {  // same per-piece offsets used by the NEXT box
+    x += 4;
+    y += 8;
+  } else if (held == Tetromino::Line) {
+    x -= 4;
+    y -= 4;
+  }
+  renderGrid(x, y, getTetrominoGrid(held, 0), state.level, 8, 8, getColor(held));
+}
+
+void GameRenderer::renderClearMessage(const std::string &message,
+                                      const pdi::Coords &grid_top_left) const {
+  std::istringstream words(message);
+  std::string word;
+  int line = 0;
+  while (words >> word) {
+    const int x = grid_top_left.x + (80 - 8 * static_cast<int>(word.size())) / 2;
+    drawer_->drawString(pdi::Coords{x, grid_top_left.y + 56 + line * 10}, word, pdi::WHITE());
+    ++line;
+  }
 }
 
 void GameRenderer::renderEntryDelay(const bool delay_entry,
@@ -177,7 +259,9 @@ void GameRenderer::renderControls(const GameState<> &state, const KeyEvents &key
 
 void GameRenderer::renderBackground() {
   if (not background_rendered_) {
-    drawer_->drawSprite(0, 0, sprite_provider_->getSprite("basic-field-empty-black"));
+    drawWidescreenRails(*drawer_);
+    drawer_->drawSprite(WIDESCREEN_LEGACY_OFFSET_X, 0,
+                        sprite_provider_->getSprite("basic-field-empty-black"));
     background_rendered_ = true;
   }
 }
@@ -185,20 +269,22 @@ void GameRenderer::renderBackground() {
 void GameRenderer::doTetrisFlash(const int &line_clear_frame_number) const {
   const auto &frame = line_clear_frame_number;
   if ((frame - 1) % 4 == 0) {
-    drawer_->drawSprite(0, 0, sprite_provider_->getSprite("basic-field-flash"));
+    drawer_->drawSprite(WIDESCREEN_LEGACY_OFFSET_X, 0,
+                        sprite_provider_->getSprite("basic-field-flash"));
   } else {
-    drawer_->drawSprite(0, 0, sprite_provider_->getSprite("basic-field-empty-black"));
+    drawer_->drawSprite(WIDESCREEN_LEGACY_OFFSET_X, 0,
+                        sprite_provider_->getSprite("basic-field-empty-black"));
   }
 }
 
 void GameRenderer::renderPaused() const {
-  constexpr pdi::Coords paused_pos{110, 116};
+  constexpr pdi::Coords paused_pos{182, 116};
   drawer_->drawString(paused_pos, "PAUSED", pdi::WHITE());
 }
 
 void GameRenderer::renderNesStatsics(const GameState<> &state, const Statistics &statistics) {
-  constexpr pdi::Coords tetromino_counter_start{48, 88};
-  constexpr pdi::Coords counter_sprite_pos{13, 61};
+  constexpr pdi::Coords tetromino_counter_start{120, 88};
+  constexpr pdi::Coords counter_sprite_pos{85, 61};
 
   drawer_->drawSprite(counter_sprite_pos, sprite_provider_->getSprite(
                                               "l" + std::to_string(state.level % 10) + "-counts"));
@@ -212,7 +298,7 @@ void GameRenderer::renderNesStatsics(const GameState<> &state, const Statistics 
 void GameRenderer::renderTreyVisionStatistics(const GameState<> &state,
                                               const Statistics &statistics) {
   auto get_coords = [](const int row, const int col) -> pdi::Coords {
-    constexpr pdi::Coords top_left{18, 88};
+    constexpr pdi::Coords top_left{90, 88};
     const int column_offset = 40;
     const int row_offset = 12;
     return {top_left.x + (col * column_offset), top_left.y + (row * row_offset)};
@@ -262,10 +348,10 @@ void GameRenderer::renderGameState(const GameState<> &state, const Statistics &s
                                    const bool render_controls, const bool render_das_bar,
                                    const StatisticsMode &statistics_mode,
                                    const KeyEvents &key_events, const Das &das_processor) {
-  constexpr pdi::Coords grid_top_left{96, 40};
+  constexpr pdi::Coords grid_top_left{168, 40};
   constexpr pdi::Rect grid_size{80, 160};
-  constexpr pdi::Coords das_box_pos{184, 175};
-  constexpr pdi::Coords controller_box_pos{184, 196};
+  constexpr pdi::Coords das_box_pos{256, 175};
+  constexpr pdi::Coords controller_box_pos{256, 196};
   auto get_grid_for_render = [](const GameState<> &state) {
     if (entryDelay(state)) {
       return state.grid;
@@ -283,7 +369,18 @@ void GameRenderer::renderGameState(const GameState<> &state, const Statistics &s
     renderTreyVisionStatistics(state, stats);
   }
 
-  renderGrid(grid_top_left.x, grid_top_left.y, get_grid_for_render(state), state.level);
+  const auto grid_for_render = get_grid_for_render(state);
+  renderGrid(grid_top_left.x, grid_top_left.y, grid_for_render, state.level);
+  if (state.modern_mode) {
+    // No ghost while a spawn is pending (the piece is parked off-grid for that one frame).
+    if (not entryDelay(state) && not state.spawn_new_tetromino) {
+      renderGhost(state, grid_for_render, grid_top_left);
+    }
+    renderHold(state);
+    if (state.clear_message_frames > 0) {
+      renderClearMessage(state.clear_message, grid_top_left);
+    }
+  }
   renderNextTetromino(state.next_tetromino, state.level);
   renderText(state, stats);
   if (render_controls) {

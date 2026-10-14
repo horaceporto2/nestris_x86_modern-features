@@ -20,9 +20,10 @@ Statistics::Statistics()
   burn_counter_{}
 {}
 
-void Statistics::update(const int lines_cleared, const int level) {
+void Statistics::update(const int lines_cleared, const int level, const bool modern) {
   if (lines_cleared == 4) {
-    score_from_tetrises_ += getScoreForLineClear(lines_cleared, level);
+    score_from_tetrises_ += modern ? getModernScoreForLineClear(lines_cleared, level)
+                                   : getScoreForLineClear(lines_cleared, level);
     burn_counter_ = 0;
   } else {
     burn_counter_ += lines_cleared;

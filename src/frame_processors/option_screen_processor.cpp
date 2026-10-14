@@ -54,6 +54,7 @@ OptionScreenProcessor::OptionScreenProcessor(
 
   options_["hard_drop"] = std::make_unique<BoolOption>("HARD DROP [key: ]", false);
   options_["wall_kick"] = std::make_unique<BoolOption>("WALL KICK", false);
+  options_["modern_mode"] = std::make_unique<BoolOption>("MODERN MODE", false);
 
   options_["statistics_mode"] =
       std::make_unique<StringOption>("STATISTICS", std::vector<std::string>{"NES", "TREY V"});
@@ -70,6 +71,7 @@ OptionScreenProcessor::OptionScreenProcessor(
                                             "das_initial_delay_frames",  //
                                             "das_repeat_delay_frames",   //
                                             "gravity_mode",              //
+                                            "modern_mode",               //
                                             "hard_drop",                 //
                                             "wall_kick",                 //
                                             "statistics_mode",           //
@@ -112,6 +114,10 @@ void OptionScreenProcessor::setOptionsYaml(const YAML::Node& node) {
 ProgramFlowSignal OptionScreenProcessor::processKeyEvents(const KeyEvents& key_events) {
   auto& current_idx = selected_index_;
   const int num_options = static_cast<int>(option_order_.size());
+  if (key_events.at(KeyAction::Back).pressed) {
+    sample_player_->playSample("menu_select_02");
+    return ProgramFlowSignal::LevelSelectorScreen;
+  }
   if (key_events.at(KeyAction::RotateClockwise).pressed ||
       key_events.at(KeyAction::Start).pressed) {
     if (option_order_.at(selected_index_) == "configure_keyboard") {
@@ -159,7 +165,7 @@ std::vector<int> OptionScreenProcessor::renderOptions(const std::set<int>& space
                                                       const int left_column, const int right_column,
                                                       const int first_row,
                                                       const bool grey_out_das_options_) const {
-  drawer_->drawString(100, 17, "OPTIONS");
+  drawer_->drawString(172, 17, "OPTIONS");
   const std::set<std::string> das_options{"refresh_frequency", "das_initial_delay_frames",
                                           "das_repeat_delay_frames", "gravity_mode"};
 
@@ -193,8 +199,8 @@ void OptionScreenProcessor::renderSelector(const int column_location,
   constexpr int size = 7;
   const auto& option = getSelectedOption();
   if (isSelectedOptionDummy()) {
-    drawTriangleSelector(*drawer_, 40, row_locations.at(selected_index_), size, color, true);
-    drawTriangleSelector(*drawer_, 210, row_locations.at(selected_index_), size, color, false);
+    drawTriangleSelector(*drawer_, 112, row_locations.at(selected_index_), size, color, true);
+    drawTriangleSelector(*drawer_, 282, row_locations.at(selected_index_), size, color, false);
   }
   if (option.prevOptionAvailable()) {
     drawTriangleSelector(*drawer_, column_location, row_locations.at(selected_index_), size, color,
@@ -207,10 +213,12 @@ void OptionScreenProcessor::renderSelector(const int column_location,
 }
 
 void OptionScreenProcessor::renderOptionScreen() const {
-  drawer_->drawSprite(0, 0, sprite_provider_->getSprite("options-background"));
+  drawWidescreenRails(*drawer_);
+  drawer_->drawSprite(WIDESCREEN_LEGACY_OFFSET_X, 0,
+                      sprite_provider_->getSprite("options-background"));
   // drawer_->fillRect(30, 30, 197, 180, PixelDrawingInterface::BLACK());
-  constexpr int x_left_column = 32;
-  constexpr int x_right_column = 180;
+  constexpr int x_left_column = 104;
+  constexpr int x_right_column = 252;
   constexpr int y_row_start = 40;
 
   std::set<int> spacers{1, 6, 8, 11};

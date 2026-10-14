@@ -9,7 +9,7 @@ namespace nestris_x86 {
 class Statistics {
  public:
   Statistics();
-  void update(const int lines_cleared, const int level);
+  void update(const int lines_cleared, const int level, const bool modern = false);
   void update(const Tetromino& new_tetromino);
   void dasResetSignal();
 
