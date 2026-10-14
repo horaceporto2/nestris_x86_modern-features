@@ -39,7 +39,7 @@ jobs:
         with:
           submodules: recursive
       - name: Configure
-        run: cmake -S . -B build -A x64 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        run: cmake -S . -B build -A x64 "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
       - name: Build
         run: cmake --build build --config Release --target nestris_x86 --parallel
       - name: Package
