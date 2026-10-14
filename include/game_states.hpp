@@ -3,13 +3,17 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "key_defines.hpp"
 #include "tetromino.hpp"
 
 namespace nestris_x86 {
+
+enum class TSpin { NoTSpin, Mini, Full };
 
 template <int W = 10, int H = 20>
 // clang-format off
@@ -31,7 +35,23 @@ struct GameState {
         press_down_lock{},
         press_down_counter{},
         viz_wall_charge_frame_count{},
-        high_scores{{1000, "HOWARD"}} {}
+        high_scores{{1000, "HOWARD"}},
+        modern_mode{},
+        hold_tetromino{},
+        hold_used{},
+        forced_spawn_tetromino{},
+        lock_delay_counter{},
+        lock_resets{},
+        lowest_y{-100},
+        force_lock{},
+        last_move_rotation{},
+        last_kick_index{},
+        pending_tspin{TSpin::NoTSpin},
+        combo{-1},
+        back_to_back{},
+        pending_clear_score{},
+        clear_message{},
+        clear_message_frames{} {}
   // clang-format on
 
   using Grid = std::array<std::array<int, H>, W>;
@@ -52,6 +72,24 @@ struct GameState {
   int press_down_counter;
   int viz_wall_charge_frame_count;
   std::map<int, std::string> high_scores;
+
+  // ---- Modern mode ----
+  bool modern_mode;
+  std::optional<Tetromino> hold_tetromino;
+  bool hold_used;
+  std::optional<Tetromino> forced_spawn_tetromino;  // set by Hold, consumed on spawn
+  int lock_delay_counter;
+  int lock_resets;
+  int lowest_y;
+  bool force_lock;
+  bool last_move_rotation;
+  int last_kick_index;
+  TSpin pending_tspin;
+  int combo;
+  bool back_to_back;
+  int pending_clear_score;
+  std::string clear_message;
+  int clear_message_frames;
 };
 
 inline bool entryDelay(const GameState<>& state) {

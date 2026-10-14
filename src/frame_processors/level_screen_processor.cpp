@@ -8,6 +8,11 @@ namespace nestris_x86 {
 
 ProgramFlowSignal LevelScreenProcessor::processKeyEvents(const KeyEvents& key_events) {
   auto& level = level_;
+  if (key_events.at(KeyAction::Back).pressed && options_selected_) {
+    sample_player_->playSample("menu_select_02");
+    options_selected_ = false;
+    return ProgramFlowSignal::FrameSuccess;
+  }
   if (options_selected_) {
     if (key_events.at(KeyAction::Left).pressed) {
       sample_player_->playSample("menu_blip");
@@ -64,23 +69,25 @@ LevelScreenProcessor::LevelScreenProcessor(std::unique_ptr<PixelDrawingInterface
 
 void LevelScreenProcessor::renderMenu() const {
   if (*frame_counter_ == 0) {
-    drawer_->drawSprite(0, 0, sprite_provider_->getSprite("a-type-background"));
+    drawWidescreenRails(*drawer_);
+    drawer_->drawSprite(WIDESCREEN_LEGACY_OFFSET_X, 0,
+                        sprite_provider_->getSprite("a-type-background"));
   }
 
   // Clear the top area.
-  drawer_->fillRect(30, 72, 190, 50, PixelDrawingInterface::BLACK());
+  drawer_->fillRect(102, 72, 190, 50, PixelDrawingInterface::BLACK());
 
-  drawer_->drawString(157, 80, "OPTIONS");
+  drawer_->drawString(229, 80, "OPTIONS");
 
-  drawer_->drawString(72, 153, "JDMFX  1439173 30");
-  drawer_->drawString(72, 169, "KORYAN 1273120 29");
-  drawer_->drawString(72, 185, "JONAS  1245200 29");
+  drawer_->drawString(144, 153, "JDMFX  1439173 30");
+  drawer_->drawString(144, 169, "KORYAN 1273120 29");
+  drawer_->drawString(144, 185, "JONAS  1245200 29");
 
   if (options_selected_) {
     const auto color =
         (*frame_counter_) % 4 ? PixelDrawingInterface::WHITE() : PixelDrawingInterface::BLACK();
-    drawTriangleSelector(*drawer_, 148, 80, 7, color, false);
-    drawTriangleSelector(*drawer_, 219, 80, 7, color, true);
+    drawTriangleSelector(*drawer_, 220, 80, 7, color, false);
+    drawTriangleSelector(*drawer_, 291, 80, 7, color, true);
     renderLevelSelector(-1);
   } else {
     renderLevelSelector(level_);
@@ -88,7 +95,7 @@ void LevelScreenProcessor::renderMenu() const {
 }
 
 void LevelScreenProcessor::renderLevelSelector(const int level) const {
-  constexpr PixelDrawingInterface::Coords level_selector{51, 75};
+  constexpr PixelDrawingInterface::Coords level_selector{123, 75};
   constexpr PixelDrawingInterface::Rect level_selector_size{83, 35};
   constexpr PixelDrawingInterface::Rect selector_size{16, 16};
   const PixelDrawingInterface::Color selector_color{252, 151, 56, 255};

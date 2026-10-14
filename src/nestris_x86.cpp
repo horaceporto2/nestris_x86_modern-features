@@ -11,6 +11,7 @@
 
 #include "assets.hpp"
 #include "drawers/olc_drawer.hpp"
+#include "drawing_utils.hpp"
 #include "frame_processors/game_processor.hpp"
 #include "frame_processors/keyboard_config_processor.hpp"
 #include "frame_processors/level_screen_processor.hpp"
@@ -182,16 +183,25 @@ NestrisX86::NestrisX86()
     if ((*yaml_node)["keyboard_bindings"]) {
       const auto key_bindings = keyBindingsFromYaml((*yaml_node)["keyboard_bindings"]);
       if (key_bindings.has_value()) {
-        keyboard_key_bindings_ = *key_bindings;
-        keyboard_config_processor_->setKeyBindings(*key_bindings);
+        // Merge over defaults so actions added later (e.g. Hold) never go missing.
+        auto merged = getDefaultKeyBindings(*keyboard_input_);
+        for (const auto &[action, code] : *key_bindings) {
+          merged[action] = code;
+        }
+        keyboard_key_bindings_ = merged;
+        keyboard_config_processor_->setKeyBindings(merged);
       }
     }
 
     if ((*yaml_node)["gamepad_bindings"]) {
       const auto gamepad_bindings = keyBindingsFromYaml((*yaml_node)["gamepad_bindings"]);
       if (gamepad_bindings.has_value()) {
-        gamepad_key_bindings_ = *gamepad_bindings;
-        gamepad_config_processor_->setKeyBindings(*gamepad_bindings);
+        auto merged = getDefaultGamePadBindings(*gamepad_input_);
+        for (const auto &[action, code] : *gamepad_bindings) {
+          merged[action] = code;
+        }
+        gamepad_key_bindings_ = merged;
+        gamepad_config_processor_->setKeyBindings(merged);
       }
     }
 
@@ -209,8 +219,8 @@ NestrisX86::NestrisX86()
 }
 
 bool NestrisX86::OnUserCreate() {
-  if (ScreenWidth() != 256 || ScreenHeight() != 225) {
-    LOG_ERROR("Screen size must be set to 256x225 for this application.");
+  if (ScreenWidth() != WIDESCREEN_WIDTH || ScreenHeight() != WIDESCREEN_HEIGHT) {
+    LOG_ERROR("Screen size must be set to 400x225 for this application.");
     return false;
   }
 
@@ -257,6 +267,16 @@ GameOptions menuOptionsToGameOptions(const OptionScreenProcessor::OptionMap &opt
   options.statistics_mode =
       statisticsModeFromString(getStringOption(*option_map.at("statistics_mode")));
   options.rng_type = rngTypeFromString(getStringOption(*option_map.at("rng_type")));
+  // "Modern" = hold + hard drop + ghost + SRS + lock delay + guideline gravity/score.
+  if (const auto it = option_map.find("modern_mode"); it != option_map.end()) {
+    options.modern_mode = getBoolOption(*it->second);
+  }
+  if (options.modern_mode) {
+    options.rng_type = RngType::SevenBag;
+  }
+  if (options.modern_mode) {
+    options.rng_type = RngType::SevenBag;
+  }
   return options;
 }
 

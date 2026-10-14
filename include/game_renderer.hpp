@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <set>
+#include <string>
 
 #include "assets.hpp"
 #include "das.hpp"
@@ -52,6 +53,14 @@ class GameRenderer {
   void renderBackground();
   void renderText(const GameState<> &state, const Statistics &stats) const;
   void renderNextTetromino(const Tetromino &next_tetromino, const int level) const;
+
+  // ---- Modern mode ----
+  void renderGhost(const GameState<> &state, const GameState<>::Grid &rendered_grid,
+                   const PixelDrawingInterface::Coords &grid_top_left) const;
+  void renderHold(const GameState<> &state) const;
+  void renderClearMessage(const std::string &message,
+                          const PixelDrawingInterface::Coords &grid_top_left) const;
+
   void renderDasBar(const int das_counter, const Das &das_processor,
                     const PixelDrawingInterface::Coords &das_box_pos) const;
   void renderControls(const GameState<> &state, const KeyEvents &key_events,

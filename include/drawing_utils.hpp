@@ -3,6 +3,12 @@
 #include "drawers/pixel_drawing_interface.hpp"
 
 namespace nestris_x86 {
+inline constexpr int WIDESCREEN_WIDTH = 400;
+inline constexpr int WIDESCREEN_HEIGHT = 225;
+inline constexpr int WIDESCREEN_LEGACY_OFFSET_X = 72;
+
+void drawWidescreenRails(const PixelDrawingInterface& drawer);
+
 void drawNumber(const PixelDrawingInterface& drawer,                                          //
                 const int x,                                                                  //
                 const int y,                                                                  //

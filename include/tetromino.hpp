@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nestris_x86 {
@@ -12,6 +13,7 @@ struct TetrominoState {
   int x;
   int y;
   int rotation;
+  bool srs{false};  // modern mode: use SRS orientations (4 distinct states)
 };
 
 using TetrominoGrid = std::vector<std::vector<int>>;
@@ -66,7 +68,44 @@ inline TetrominoGrid getTetrominoGrid(const Tetromino &tetromino, const int rota
   }
 }
 
+// ---- SRS orientations (modern mode) ----
+// States: 0 = spawn, 1 = clockwise ("R"), 2, 3 = counter-clockwise ("L").
+// T/J/L reuse the NES tables: the NES spawn orientation is the SRS state 2, so srs[r] = nes[(r+2)%4].
+// S/Z/I have only 2 NES states, so full 4-state tables are built here (matrices are [x][y]).
+inline TetrominoGrid gridFromCells(const int size, const std::vector<std::pair<int, int>> &cells) {
+  TetrominoGrid grid(size, std::vector<int>(size, 0));
+  for (const auto &[x, y] : cells) {
+    grid[x][y] = 1;
+  }
+  return grid;
+}
+
+inline TetrominoGrid getSrsTetrominoGrid(const Tetromino &tetromino, const int rotation) {
+  static const std::vector<TetrominoGrid> S_SRS{
+      gridFromCells(3, {{1, 0}, {2, 0}, {0, 1}, {1, 1}}), gridFromCells(3, {{1, 0}, {1, 1}, {2, 1}, {2, 2}}),
+      gridFromCells(3, {{1, 1}, {2, 1}, {0, 2}, {1, 2}}), gridFromCells(3, {{0, 0}, {0, 1}, {1, 1}, {1, 2}})};
+  static const std::vector<TetrominoGrid> Z_SRS{
+      gridFromCells(3, {{0, 0}, {1, 0}, {1, 1}, {2, 1}}), gridFromCells(3, {{2, 0}, {1, 1}, {2, 1}, {1, 2}}),
+      gridFromCells(3, {{0, 1}, {1, 1}, {1, 2}, {2, 2}}), gridFromCells(3, {{1, 0}, {0, 1}, {1, 1}, {0, 2}})};
+  static const std::vector<TetrominoGrid> I_SRS{
+      gridFromCells(4, {{0, 1}, {1, 1}, {2, 1}, {3, 1}}), gridFromCells(4, {{2, 0}, {2, 1}, {2, 2}, {2, 3}}),
+      gridFromCells(4, {{0, 2}, {1, 2}, {2, 2}, {3, 2}}), gridFromCells(4, {{1, 0}, {1, 1}, {1, 2}, {1, 3}})};
+  const int r = ((rotation % 4) + 4) % 4;
+  switch (tetromino) {
+    case Tetromino::T: return T_TETROMINO[(r + 2) % 4];
+    case Tetromino::J: return J_TETROMINO[(r + 2) % 4];
+    case Tetromino::L: return L_TETROMINO[(r + 2) % 4];
+    case Tetromino::S: return S_SRS[r];
+    case Tetromino::Z: return Z_SRS[r];
+    case Tetromino::Line: return I_SRS[r];
+    default: return SQUARE_TETROMINO;
+  }
+}
+
 inline TetrominoGrid getTetrominoGrid(const TetrominoState &tetromino) {
+  if (tetromino.srs) {
+    return getSrsTetrominoGrid(tetromino.tetromino, tetromino.rotation);
+  }
   return getTetrominoGrid(tetromino.tetromino, tetromino.rotation);
 }
 

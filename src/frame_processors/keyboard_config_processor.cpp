@@ -24,6 +24,10 @@ KeyboardConfigProcessor::KeyboardConfigProcessor(
       input_ptr_(input_interface) {}
 
 ProgramFlowSignal KeyboardConfigProcessor::processKeyEvents(const KeyEvents& key_events) {
+  if (key_events.at(KeyAction::Back).pressed) {
+    sample_player_->playSample("menu_select_02");
+    return ProgramFlowSignal::OptionsScreen;
+  }
   if (key_events.at(KeyAction::Up).pressed) {
     sample_player_->playSample("menu_blip");
     selector_idx_ = selector_idx_ > 0 ? selector_idx_ - 1 : 2;
@@ -52,15 +56,15 @@ ProgramFlowSignal KeyboardConfigProcessor::processKeyEvents(const KeyEvents& key
 }
 
 void KeyboardConfigProcessor::clearScreen() const {
-  constexpr pdi::Coords top_left{30, 30};
+  constexpr pdi::Coords top_left{102, 30};
   constexpr pdi::Rect screen_size{197, 180};
   drawer_->fillRect(top_left, screen_size, pdi::BLACK());
 }
 
 void KeyboardConfigProcessor::renderKeyboardConfigScreen() const {
   clearScreen();
-  constexpr int x_left_column = 32;
-  constexpr int x_right_column = 180;
+  constexpr int x_left_column = 104;
+  constexpr int x_right_column = 252;
 
   int y_row = 40;
   for (const auto& [action, key] : key_bindings_) {
@@ -74,7 +78,7 @@ void KeyboardConfigProcessor::renderKeyboardConfigScreen() const {
     drawer_->drawString(x_right_column, y_row, "???");
   }
 
-  constexpr pdi::Coords menu_items_start{80, 150};
+  constexpr pdi::Coords menu_items_start{152, 150};
   drawer_->drawString(menu_items_start, "CHANGE CONFIG");
   drawer_->drawString(menu_items_start + pdi::Coords{20, 10}, "DEFAULTS");
   drawer_->drawString(menu_items_start + pdi::Coords{30, 20}, "ACCEPT");
@@ -87,6 +91,14 @@ void KeyboardConfigProcessor::renderKeyboardConfigScreen() const {
 }
 
 ProgramFlowSignal KeyboardConfigProcessor::processFrame(const KeyEvents& key_events) {
+  if (key_events.at(KeyAction::Back).pressed) {
+    keybinding_active_ = false;
+    active_key_ = KeyAction::COUNT;
+    wait_until_key_lifted_ = false;
+    sample_player_->playSample("menu_select_02");
+    renderKeyboardConfigScreen();
+    return ProgramFlowSignal::OptionsScreen;
+  }
   if (wait_until_key_lifted_) {
     wait_until_key_lifted_ = input_ptr_->getPressedKey() != input_ptr_->getNullKey();
     return ProgramFlowSignal::FrameSuccess;
