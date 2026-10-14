@@ -1,5 +1,10 @@
 # Nestris x86
 
+> **Fork notice:** This repository is a fork of [rosskidson/nestris_x86](https://github.com/rosskidson/nestris_x86), the original Nestris x86 project created by **Ross Kidson** ([rosskidson](https://github.com/rosskidson)). Thank you to Ross for creating the original project. This fork builds on his work and preserves the original project history.
+>
+> This fork adds an optional modern gameplay mode and related interface updates. The original project and its author remain credited above.
+
+
 ### Summary
 This is a reimplementation of the original 1989 NES Tetris game using modern C++ compilers for modern computer hardware. Nothing from the NES is being emulated here: this is a native implementation for Windows, Linux, and macOS. Alongside the NES-style gameplay, the project includes an optional modern mode with Hold, Hard Drop, SRS rotation, a ghost piece, lock delay, and guideline-style scoring.
 
