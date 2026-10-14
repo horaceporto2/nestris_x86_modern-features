@@ -21,7 +21,9 @@ if(WIN32)
     INCLUDE_DIRECTORIES(SDL-win32/include)
     LINK_DIRECTORIES(SDL-win32/lib)
 
-    SET(TETRIS_LIBS SDL SDL_mixer)
+    find_package(yaml-cpp CONFIG REQUIRED)
+
+    SET(TETRIS_LIBS SDL SDL_mixer yaml-cpp::yaml-cpp)
 
 else()
     FIND_PACKAGE(PNG REQUIRED)
