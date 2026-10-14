@@ -1,4 +1,4 @@
-name: Publish v0.8.0 release
+name: Publish v0.8.1 release
 
 on:
   push:
@@ -18,14 +18,19 @@ jobs:
         with:
           submodules: recursive
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake g++ libpng-dev libsdl1.2-dev libsdl-mixer1.2-dev libyaml-cpp-dev libgl1-mesa-dev libx11-dev
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ libpng-dev libsdl1.2-dev libsdl-mixer1.2-dev libyaml-cpp-dev libgl1-mesa-dev libx11-dev patchelf
       - name: Build
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target nestris_x86 --parallel 2
       - name: Package
         run: |
-          mkdir -p dist/nestris_x86-linux-x86_64
+          mkdir -p dist/nestris_x86-linux-x86_64/lib dist/nestris_x86-linux-x86_64/THIRD-PARTY-LICENSES
           cp build/nestris_x86 README.md LICENSE dist/nestris_x86-linux-x86_64/
-          printf '%s\n' 'Linux x86_64 build.' 'Install the SDL 1.2, SDL_mixer, libpng, yaml-cpp, and OpenGL runtime libraries for your distribution before running nestris_x86.' > dist/nestris_x86-linux-x86_64/INSTALL.txt
+          cp -L /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.7 dist/nestris_x86-linux-x86_64/lib/libyaml-cpp.so.0.7
+          cp /usr/share/doc/libyaml-cpp0.7/copyright dist/nestris_x86-linux-x86_64/THIRD-PARTY-LICENSES/yaml-cpp-copyright
+          patchelf --set-rpath '$ORIGIN/lib' dist/nestris_x86-linux-x86_64/nestris_x86
+          printf '%s\\n' 'Linux x86_64 build. The yaml-cpp runtime library is bundled.' 'Requires SDL 1.2, SDL_mixer, OpenGL, and standard system libraries.' 'Run ./nestris_x86 from this directory. If prompted, choose Run or Allow Launch.' > dist/nestris_x86-linux-x86_64/INSTALL.txt
+          ldd dist/nestris_x86-linux-x86_64/nestris_x86 | tee dist/nestris_x86-linux-x86_64/DEPENDENCIES.txt
+          if grep -q 'not found' dist/nestris_x86-linux-x86_64/DEPENDENCIES.txt; then exit 1; fi
           tar -C dist -cJf dist/nestris_x86_linux_x86-64.tar.xz nestris_x86-linux-x86_64
       - uses: actions/upload-artifact@v4
         with:
@@ -65,7 +70,7 @@ jobs:
           path: dist/nestris_x86_win_x86-64.zip
 
   publish:
-    if: "github.event.head_commit.message == 'release: publish v0.8.0 for Linux and Windows'"
+    if: "github.event.head_commit.message == 'release: publish v0.8.1 with portable Linux yaml-cpp dependency'"
     needs:
       - build-linux
       - build-windows
@@ -83,4 +88,4 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create v0.8.0 dist/nestris_x86_linux_x86-64.tar.xz dist/nestris_x86_win_x86-64.zip --target "$GITHUB_SHA" --title "Nestris x86 v0.8.0" --notes "First release of the horaceporto2 fork. Includes modern gameplay updates, a Linux x86_64 build, and a Windows x86_64 build. The original project is by Ross Kidson (https://github.com/rosskidson/nestris_x86)."
+        run: gh release create v0.8.1 dist/nestris_x86_linux_x86-64.tar.xz dist/nestris_x86_win_x86-64.zip --target "$GITHUB_SHA" --title "Nestris x86 v0.8.1" --notes "Linux launch fix: bundle yaml-cpp 0.7 and set the executable runtime path to the bundled library. Includes Linux x86_64 and Windows x86_64 builds. The original project is by Ross Kidson (https://github.com/rosskidson/nestris_x86)."
