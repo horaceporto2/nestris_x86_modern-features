@@ -1,0 +1,78 @@
+name: Publish v0.8.0 release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/release-v0.8.0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ libpng-dev libsdl1.2-dev libsdl-mixer1.2-dev libyaml-cpp-dev libgl1-mesa-dev libx11-dev
+      - name: Build
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target nestris_x86 --parallel 2
+      - name: Package
+        run: |
+          mkdir -p dist/nestris_x86-linux-x86_64
+          cp build/nestris_x86 README.md LICENSE dist/nestris_x86-linux-x86_64/
+          printf '%s\n' 'Linux x86_64 build.' 'Install the SDL 1.2, SDL_mixer, libpng, yaml-cpp, and OpenGL runtime libraries for your distribution before running nestris_x86.' > dist/nestris_x86-linux-x86_64/INSTALL.txt
+          tar -C dist -cJf dist/nestris_x86_linux_x86-64.tar.xz nestris_x86-linux-x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: dist/nestris_x86_linux_x86-64.tar.xz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake -S . -B build -A x64
+      - name: Build
+        run: cmake --build build --config Release --target nestris_x86 --parallel
+      - name: Package
+        shell: pwsh
+        run: |
+          $package = 'dist/nestris_x86-windows-x86_64'
+          New-Item -ItemType Directory -Force -Path $package | Out-Null
+          Copy-Item 'build/Release/nestris_x86.exe' $package
+          Copy-Item 'SDL-win32/lib/SDL.dll' $package
+          Copy-Item 'SDL-win32/lib/SDL_mixer.dll' $package
+          Copy-Item 'README.md' $package
+          Copy-Item 'LICENSE' $package
+          Compress-Archive -Path "$package/*" -DestinationPath 'dist/nestris_x86_win_x86-64.zip' -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: dist/nestris_x86_win_x86-64.zip
+
+  publish:
+    needs:
+      - build-linux
+      - build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: dist
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create v0.8.0 dist/nestris_x86_linux_x86-64.tar.xz dist/nestris_x86_win_x86-64.zip --target "$GITHUB_SHA" --title "Nestris x86 v0.8.0" --notes "First release of the horaceporto2 fork. Includes modern gameplay updates, a Linux x86_64 build, and a Windows x86_64 build. Original project by Ross Kidson: https://github.com/rosskidson/nestris_x86."
