@@ -58,7 +58,9 @@ Windows:
 SDL has been packaged in the release for Windows.
 
 Binaries available under releases:
-https://github.com/horaceporto2/nestris_x86_modern-features/releases/tag/v0.8.0
+https://github.com/horaceporto2/nestris_x86_modern-features/releases/tag/v0.8.1
+
+The Linux x86_64 archive includes yaml-cpp, so it does not depend on the yaml-cpp version installed by your distribution. SDL 1.2, SDL_mixer, OpenGL, and the standard system libraries are still required. Extract the archive, then run `nestris_x86`. If your file manager asks whether to run the executable, choose **Run** (or **Allow Launch**).
 
 ### Building
 
