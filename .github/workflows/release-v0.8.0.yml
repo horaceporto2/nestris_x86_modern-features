@@ -65,7 +65,7 @@ jobs:
           path: dist/nestris_x86_win_x86-64.zip
 
   publish:
-    if: github.event.head_commit.message == 'release: publish v0.8.0 for Linux and Windows'
+    if: "github.event.head_commit.message == 'release: publish v0.8.0 for Linux and Windows'"
     needs:
       - build-linux
       - build-windows
